@@ -9,6 +9,7 @@ A cross-platform chat application created in React Native. Users will be able to
 - **React Native** (JavaScript framework)
 - **Expo** (Build tool)
 - **Android Studio Emulator** (Testing)
+- **GiftedChat** (React Native chat library)
 
 ## Setup Instructions
 
