@@ -6,7 +6,9 @@ import {
   TextInput,
   ImageBackground,
   TouchableOpacity,
+  Alert,
 } from "react-native";
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 const Start = ({ navigation }) => {
   const [name, setName] = useState("");
@@ -14,6 +16,24 @@ const Start = ({ navigation }) => {
   const background = require("../assets/background.png");
   const backgroundColors = ["#090C08", "#474056", "#8A95A5", "#B9C6AE"];
   const isDisabled = !name.trim(); // Disabled state for the button
+
+  const auth = getAuth();
+
+  // Anonymous sign-in funciton for button press
+  const signInUser = () => {
+    signInAnonymously(auth)
+      .then((result) => {
+        navigation.navigate("Chat", {
+          userID: result.user.uid,
+          name: name,
+          selectedColor: selectedColor,
+        });
+        Alert.alert("Signed in Successfully!");
+      })
+      .catch((error) => {
+        Alert.alert("Unable to sign in, try later again.");
+      });
+  };
 
   return (
     <ImageBackground
@@ -53,12 +73,7 @@ const Start = ({ navigation }) => {
 
         <TouchableOpacity
           style={[styles.button, isDisabled && styles.buttonDisabled]} // Conditional disabled style
-          onPress={() =>
-            navigation.navigate("Chat", {
-              name: name,
-              selectedColor: selectedColor,
-            })
-          }
+          onPress={signInUser}
           disabled={isDisabled}
         >
           <Text

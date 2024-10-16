@@ -7,16 +7,55 @@ import {
 } from "react-native";
 import { useState, useEffect } from "react";
 import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+} from "firebase/firestore";
 
-const Chat = ({ route, navigation }) => {
-  const { name, selectedColor } = route.params;
+const Chat = ({ route, navigation, db }) => {
+  const { userID, name, selectedColor } = route.params; // Get user ID, name and color from route
   const [messages, setMessages] = useState([]);
-  const onSend = (newMessages) => {
-    setMessages((previousMessages) =>
-      GiftedChat.append(previousMessages, newMessages)
-    );
+
+  // Fetch messages and listen for updates
+  useEffect(() => {
+    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const messagesList = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          _id: doc.id,
+          text: data.text,
+          createdAt: data.createdAt.toDate(), // Convert Timestamp to Date
+          user: {
+            _id: data.user._id,
+            name: data.user.name,
+          },
+        };
+      });
+      setMessages(messagesList);
+    });
+
+    return () => unsubscribe();
+  }, [db]);
+
+  // Handle sending new messages
+  const onSend = async (newMessages) => {
+    const message = newMessages[0];
+    try {
+      await addDoc(collection(db, "messages"), {
+        text: message.text,
+        createdAt: new Date(),
+        user: message.user,
+      });
+    } catch (error) {
+      console.error("Error sending message: ", error);
+    }
   };
 
+  // Customize the chat bubble style
   const renderBubble = (props) => {
     return (
       <Bubble
@@ -26,7 +65,7 @@ const Chat = ({ route, navigation }) => {
             backgroundColor: "#6D7883", // Sent bubble color
           },
           left: {
-            backgroundColor: "#EAEAEA", //Received bubble color
+            backgroundColor: "#EAEAEA", // Received bubble color
           },
         }}
         textStyle={{
@@ -41,27 +80,7 @@ const Chat = ({ route, navigation }) => {
     );
   };
 
-  useEffect(() => {
-    setMessages([
-      {
-        _id: 1,
-        text: `Hi ${name}!`, //Static user message
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: "John Doe",
-          avatar: "https://picsum.photos/140/140",
-        },
-      },
-      {
-        _id: 2,
-        text: `${name} has entered the chat.`, //System message
-        createdAt: new Date(),
-        system: true,
-      },
-    ]);
-  }, []);
-
+  // Set nav title to user's name
   useEffect(() => {
     navigation.setOptions({ title: name });
   }, [name, navigation]);
@@ -76,9 +95,10 @@ const Chat = ({ route, navigation }) => {
       <GiftedChat
         messages={messages}
         renderBubble={renderBubble}
-        onSend={(messages) => onSend(messages)}
+        onSend={(newMessages) => onSend(newMessages)}
         user={{
-          _id: 1,
+          _id: userID, // Use a fixed user ID (replace with your actual user ID logic)
+          name: name, // Use the name passed in from route.params
         }}
       />
       {Platform.OS === "android" ? (
