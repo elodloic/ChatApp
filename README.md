@@ -11,6 +11,7 @@ A cross-platform chat application created in React Native. Users will be able to
 - **Android Studio Emulator** (Testing)
 - **GiftedChat** (React Native chat library)
 - **Firebase** (Back-end & Database)
+- **AsyncStorage** (Offline capabilities)
 
 ## Setup Instructions
 

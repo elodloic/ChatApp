@@ -6,7 +6,7 @@ import {
   Platform,
 } from "react-native";
 import { useState, useEffect } from "react";
-import { GiftedChat, Bubble } from "react-native-gifted-chat";
+import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
 import {
   collection,
   addDoc,
@@ -14,32 +14,76 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const Chat = ({ route, navigation, db }) => {
+const Chat = ({ route, navigation, db, isConnected }) => {
   const { userID, name, selectedColor } = route.params; // Get user ID, name and color from route
   const [messages, setMessages] = useState([]);
 
+  let unsubscribe;
+
+  // Cache function to store messages
+  const cacheMessages = async (messages) => {
+    try {
+      await AsyncStorage.setItem("cachedMessages", JSON.stringify(messages));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // Function to load cached messages when offline
+  const loadCachedMessages = async () => {
+    try {
+      const cachedMessages = await AsyncStorage.getItem("cachedMessages");
+      if (cachedMessages) {
+        setMessages(JSON.parse(cachedMessages));
+      }
+    } catch (error) {
+      console.error("Error loading cached messages: ", error);
+    }
+  };
+
   // Fetch messages and listen for updates
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messagesList = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          _id: doc.id,
-          text: data.text,
-          createdAt: data.createdAt.toDate(), // Convert Timestamp to Date
-          user: {
-            _id: data.user._id,
-            name: data.user.name,
-          },
-        };
-      });
-      setMessages(messagesList);
-    });
+    if (isConnected === true) {
+      // unsubscribe previous onSnapshot listener
+      if (unsubscribe) unsubscribe();
+      unsubscribe = null;
 
-    return () => unsubscribe();
-  }, [db]);
+      // Query Firestore messages ordered by "createdAt"
+      const q = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+
+      // Listen for changes and fetch messages from Firestore
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        const messagesList = snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            _id: doc.id,
+            text: data.text,
+            createdAt: data.createdAt.toDate(), // Convert Firestore Timestamp to JavaScript Date
+            user: {
+              _id: data.user._id,
+              name: data.user.name,
+            },
+          };
+        });
+
+        // Cache the fetched messages
+        cacheMessages(messagesList);
+
+        // Update the state with the new messages
+        setMessages(messagesList);
+      });
+    } else {
+      // Load cached messages if offline
+      loadCachedMessages();
+    }
+
+    // Cleanup on component unmount or when the connection changes
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isConnected]); // Ensure useEffect runs when the connection status changes
 
   // Handle sending new messages
   const onSend = async (newMessages) => {
@@ -80,6 +124,12 @@ const Chat = ({ route, navigation, db }) => {
     );
   };
 
+  // Disable the input toolbar when offline
+  const renderInputToolbar = (props) => {
+    if (isConnected) return <InputToolbar {...props} />;
+    else return null;
+  };
+
   // Set nav title to user's name
   useEffect(() => {
     navigation.setOptions({ title: name });
@@ -95,6 +145,7 @@ const Chat = ({ route, navigation, db }) => {
       <GiftedChat
         messages={messages}
         renderBubble={renderBubble}
+        renderInputToolbar={renderInputToolbar}
         onSend={(newMessages) => onSend(newMessages)}
         user={{
           _id: userID, // Use a fixed user ID (replace with your actual user ID logic)
