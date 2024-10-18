@@ -1,3 +1,5 @@
+import CustomActions from "./CustomActions";
+
 import {
   StyleSheet,
   View,
@@ -5,8 +7,15 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+
 import { useState, useEffect } from "react";
-import { GiftedChat, Bubble, InputToolbar } from "react-native-gifted-chat";
+import {
+  GiftedChat,
+  Bubble,
+  InputToolbar,
+  renderActions,
+} from "react-native-gifted-chat";
+
 import {
   collection,
   addDoc,
@@ -14,7 +23,10 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import MapView from "react-native-maps";
 
 const Chat = ({ route, navigation, db, isConnected }) => {
   const { userID, name, selectedColor } = route.params; // Get user ID, name and color from route
@@ -65,6 +77,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
               _id: data.user._id,
               name: data.user.name,
             },
+            location: data.location || null, // Make sure to include location if it exists
           };
         });
 
@@ -86,17 +99,8 @@ const Chat = ({ route, navigation, db, isConnected }) => {
   }, [isConnected]); // Ensure useEffect runs when the connection status changes
 
   // Handle sending new messages
-  const onSend = async (newMessages) => {
-    const message = newMessages[0];
-    try {
-      await addDoc(collection(db, "messages"), {
-        text: message.text,
-        createdAt: new Date(),
-        user: message.user,
-      });
-    } catch (error) {
-      console.error("Error sending message: ", error);
-    }
+  const onSend = (newMessages) => {
+    addDoc(collection(db, "messages"), newMessages[0]);
   };
 
   // Customize the chat bubble style
@@ -130,6 +134,31 @@ const Chat = ({ route, navigation, db, isConnected }) => {
     else return null;
   };
 
+  const renderCustomActions = (props) => {
+    return (
+      <CustomActions {...props} onSend={onSend} userID={userID} name={name} />
+    );
+  };
+
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <MapView
+          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421,
+          }}
+        />
+      );
+    }
+
+    return null;
+  };
+
   // Set nav title to user's name
   useEffect(() => {
     navigation.setOptions({ title: name });
@@ -146,9 +175,11 @@ const Chat = ({ route, navigation, db, isConnected }) => {
         messages={messages}
         renderBubble={renderBubble}
         renderInputToolbar={renderInputToolbar}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         onSend={(newMessages) => onSend(newMessages)}
         user={{
-          _id: userID, // Use a fixed user ID (replace with your actual user ID logic)
+          _id: userID,
           name: name, // Use the name passed in from route.params
         }}
       />
