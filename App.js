@@ -17,6 +17,8 @@ import {
   enableNetwork,
 } from "firebase/firestore";
 
+import { getStorage } from "firebase/storage";
+
 // Network status detection
 const App = () => {
   const connectionStatus = useNetInfo();
@@ -45,8 +47,9 @@ const App = () => {
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
 
-  // Initialize Cloud Firestore and get a reference to the service
+  // Initialize Cloud Firestore and Storage
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
   return (
     <NavigationContainer>
@@ -57,6 +60,7 @@ const App = () => {
             <Chat
               isConnected={connectionStatus.isConnected}
               db={db}
+              storage={storage}
               {...props}
             />
           )}

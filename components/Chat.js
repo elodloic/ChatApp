@@ -28,7 +28,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import MapView from "react-native-maps";
 
-const Chat = ({ route, navigation, db, isConnected }) => {
+const Chat = ({ route, navigation, db, isConnected, storage }) => {
   const { userID, name, selectedColor } = route.params; // Get user ID, name and color from route
   const [messages, setMessages] = useState([]);
 
@@ -78,6 +78,7 @@ const Chat = ({ route, navigation, db, isConnected }) => {
               name: data.user.name,
             },
             location: data.location || null, // Make sure to include location if it exists
+            image: data.image || null, // Make sure to include image if it exists
           };
         });
 
@@ -136,7 +137,13 @@ const Chat = ({ route, navigation, db, isConnected }) => {
 
   const renderCustomActions = (props) => {
     return (
-      <CustomActions {...props} onSend={onSend} userID={userID} name={name} />
+      <CustomActions
+        {...props}
+        onSend={onSend}
+        userID={userID}
+        name={name}
+        storage={storage}
+      />
     );
   };
 
@@ -144,15 +151,18 @@ const Chat = ({ route, navigation, db, isConnected }) => {
     const { currentMessage } = props;
     if (currentMessage.location) {
       return (
-        <MapView
-          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
-          region={{
-            latitude: currentMessage.location.latitude,
-            longitude: currentMessage.location.longitude,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-        />
+        <View style={styles.mapContainer}>
+          {/* Apply borderRadius and overflow */}
+          <MapView
+            style={styles.map}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+        </View>
       );
     }
 
@@ -196,6 +206,16 @@ const Chat = ({ route, navigation, db, isConnected }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  mapContainer: {
+    width: 150,
+    height: 100,
+    borderRadius: 13,
+    margin: 3,
+    overflow: "hidden", // Ensures the map doesn't extend beyond the rounded corners
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject, // Ensures the map fills the container
   },
 });
 
