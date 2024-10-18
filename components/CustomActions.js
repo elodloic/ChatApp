@@ -4,15 +4,8 @@ import * as Location from "expo-location";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
 
-const CustomActions = ({
-  wrapperStyle,
-  iconTextStyle,
-  onSend,
-  userID,
-  name,
-  storage,
-}) => {
-  const actionSheet = useActionSheet();
+const CustomActions = ({ wrapperStyle, onSend, userID, name, storage }) => {
+  const actionSheet = useActionSheet(); // Define ActionSheet options
   const onActionPress = () => {
     const options = [
       "Choose From Library",
@@ -44,12 +37,14 @@ const CustomActions = ({
   };
 
   const generateReference = (uri) => {
+    // Generate unique file name for image
     const timeStamp = new Date().getTime();
     const imageName = uri.split("/")[uri.split("/").length - 1];
     return `${userID}-${timeStamp}-${imageName}`;
   };
 
   const uploadAndSendImage = async (imageURI) => {
+    // Upload loginc used in pickImage and takePhoto
     const uniqueRefString = generateReference(imageURI);
     const newUploadRef = ref(storage, uniqueRefString);
     const response = await fetch(imageURI);
@@ -70,6 +65,7 @@ const CustomActions = ({
   };
 
   const pickImage = async () => {
+    // Pick and image from device gallery
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permissions?.granted) {
       let result = await ImagePicker.launchImageLibraryAsync();
@@ -79,6 +75,7 @@ const CustomActions = ({
   };
 
   const takePhoto = async () => {
+    // Take a photo using device camera
     let permissions = await ImagePicker.requestCameraPermissionsAsync();
     if (permissions?.granted) {
       let result = await ImagePicker.launchCameraAsync();
@@ -88,6 +85,7 @@ const CustomActions = ({
   };
 
   const getLocation = async () => {
+    // Get device's location data
     let permission = await Location.requestForegroundPermissionsAsync();
     if (permission?.granted) {
       let location = await Location.getCurrentPositionAsync({});
@@ -110,7 +108,14 @@ const CustomActions = ({
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onActionPress}>
+    <TouchableOpacity // Action button
+      accessible={true}
+      accessibilityLabel="More options"
+      accessibilityHint="Lets you share an image or your geolocation in the chat."
+      accessibilityRole="button"
+      style={styles.container}
+      onPress={onActionPress}
+    >
       <View style={[styles.wrapper, wrapperStyle]}>
         <Text>+</Text>
       </View>

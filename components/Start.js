@@ -19,7 +19,7 @@ const Start = ({ navigation }) => {
 
   const auth = getAuth();
 
-  // Anonymous sign-in funciton for button press
+  // Anonymous sign-in funciton
   const signInUser = () => {
     signInAnonymously(auth)
       .then((result) => {
@@ -43,7 +43,7 @@ const Start = ({ navigation }) => {
       {/* App Title */}
       <Text style={styles.appTitle}>Chat App</Text>
 
-      {/* Main Container */}
+      {/* Sign-in form*/}
       <View style={styles.container}>
         <Text style={styles.baseText}>Chatroom login</Text>
 
@@ -56,6 +56,7 @@ const Start = ({ navigation }) => {
         />
 
         <Text style={styles.baseText}>Choose background color:</Text>
+
         <View style={styles.colorContainer}>
           {backgroundColors.map((color, index) => (
             <TouchableOpacity
@@ -71,7 +72,7 @@ const Start = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          style={[styles.button, isDisabled && styles.buttonDisabled]} // Conditional disabled style
+          style={[styles.button, isDisabled && styles.buttonDisabled]} // Conditionally disabled button
           onPress={signInUser}
           disabled={isDisabled}
         >

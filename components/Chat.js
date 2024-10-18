@@ -29,7 +29,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView from "react-native-maps";
 
 const Chat = ({ route, navigation, db, isConnected, storage }) => {
-  const { userID, name, selectedColor } = route.params; // Get user ID, name and color from route
+  const { userID, name, selectedColor } = route.params; // Get user ID, name and background color from route
   const [messages, setMessages] = useState([]);
 
   let unsubscribe;
@@ -77,8 +77,8 @@ const Chat = ({ route, navigation, db, isConnected, storage }) => {
               _id: data.user._id,
               name: data.user.name,
             },
-            location: data.location || null, // Make sure to include location if it exists
-            image: data.image || null, // Make sure to include image if it exists
+            location: data.location || null, // Include location if it exists
+            image: data.image || null, // Include image file if it exists
           };
         });
 
@@ -97,7 +97,7 @@ const Chat = ({ route, navigation, db, isConnected, storage }) => {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [isConnected]); // Ensure useEffect runs when the connection status changes
+  }, [isConnected]); // Trigger useEffect when the connection status changes
 
   // Handle sending new messages
   const onSend = (newMessages) => {
@@ -135,6 +135,7 @@ const Chat = ({ route, navigation, db, isConnected, storage }) => {
     else return null;
   };
 
+  // Render the custom actions component
   const renderCustomActions = (props) => {
     return (
       <CustomActions
@@ -147,6 +148,7 @@ const Chat = ({ route, navigation, db, isConnected, storage }) => {
     );
   };
 
+  // Render the custom view for the map
   const renderCustomView = (props) => {
     const { currentMessage } = props;
     if (currentMessage.location) {
@@ -190,7 +192,7 @@ const Chat = ({ route, navigation, db, isConnected, storage }) => {
         onSend={(newMessages) => onSend(newMessages)}
         user={{
           _id: userID,
-          name: name, // Use the name passed in from route.params
+          name: name, // Load from route.params
         }}
       />
       {Platform.OS === "android" ? (
